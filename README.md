@@ -144,6 +144,7 @@ classDiagram
 # Database Schema
 
 ## Creating the Supplier table
+```sql
 CREATE TABLE Supplier (
     ID_Supplier INT PRIMARY KEY AUTO_INCREMENT,
     Name VARCHAR(100) NOT NULL,
@@ -152,8 +153,10 @@ CREATE TABLE Supplier (
     Phone VARCHAR(15),
     Email VARCHAR(100)
 );
+```
 
 ## Creating the Product table
+```sql
 CREATE TABLE Product (
     ID_Product INT PRIMARY KEY AUTO_INCREMENT,
     Name VARCHAR(100) NOT NULL,
@@ -163,8 +166,9 @@ CREATE TABLE Product (
     ID_Supplier INT NOT NULL,
     FOREIGN KEY (ID_Supplier) REFERENCES Supplier(ID_Supplier)
 );
-
+```
 ## Creating the Customer table
+```sql
 CREATE TABLE Customer (
     ID_Customer INT PRIMARY KEY AUTO_INCREMENT,
     Name VARCHAR(100) NOT NULL,
@@ -177,8 +181,10 @@ CREATE TABLE Customer (
     CHECK ((Customer_Type = 'PF' AND CPF IS NOT NULL AND CNPJ IS NULL) OR
            (Customer_Type = 'PJ' AND CNPJ IS NOT NULL AND CPF IS NULL))
 );
+```
 
 ## Creating the Order table
+```sql
 CREATE TABLE Order (
     ID_Order INT PRIMARY KEY AUTO_INCREMENT,
     ID_Customer INT NOT NULL,
@@ -189,8 +195,9 @@ CREATE TABLE Order (
     Tracking_Code VARCHAR(50),
     FOREIGN KEY (ID_Customer) REFERENCES Customer(ID_Customer)
 );
-
+```
 ## CREATE TABLE Order_Item (
+```sql
     ID_Order_Item INT PRIMARY KEY AUTO_INCREMENT,
     ID_Order INT NOT NULL,
     ID_Product INT NOT NULL,
@@ -198,8 +205,9 @@ CREATE TABLE Order (
     FOREIGN KEY (ID_Order) REFERENCES Order(ID_Order),
     FOREIGN KEY (ID_Product) REFERENCES Product(ID_Product)
 );
-
+```
 ## CREATE TABLE Payment (
+```sql
     ID_Payment INT PRIMARY KEY AUTO_INCREMENT,
     ID_Order INT NOT NULL,
     Payment_Type ENUM('Credit Card', 'Boleto', 'Transfer') NOT NULL,
@@ -207,8 +215,9 @@ CREATE TABLE Order (
     Amount_Paid DECIMAL(10, 2) NOT NULL,
     FOREIGN KEY (ID_Order) REFERENCES Order(ID_Order)
 );
-
+```
 ## Creating the Delivery table
+```sql
 CREATE TABLE Delivery (
     ID_Delivery INT PRIMARY KEY AUTO_INCREMENT,
     ID_Order INT NOT NULL,
@@ -217,8 +226,9 @@ CREATE TABLE Delivery (
     Estimated_Delivery_Date DATE,
     FOREIGN KEY (ID_Order) REFERENCES Order(ID_Order)
 );
-
+```
 ## Inserting test data
+```sql
 INSERT INTO Supplier (Name, CNPJ, Address, Phone, Email)
 VALUES
 ('Supplier A', '12345678000195', 'Street A, 123', '11987654321', 'supplierA@email.com'),
@@ -253,12 +263,14 @@ INSERT INTO Delivery (ID_Order, Delivery_Status, Tracking_Code)
 VALUES
 (1, 'Pending', 'TRACK1234'),
 (2, 'In Transit', 'TRACK5678');
-
+```
 ## Adding indexes
+```sql
 CREATE INDEX idx_order_customer ON Order(ID_Customer);
 CREATE INDEX idx_order_item_product ON Order_Item(ID_Product);
-
+```
 ## Creating trigger for stock validation
+```sql
 DELIMITER $$
 CREATE TRIGGER trg_check_stock BEFORE INSERT ON Order_Item
 FOR EACH ROW
@@ -274,59 +286,66 @@ BEGIN
     END IF;
 END$$
 DELIMITER ;
-
+```
 ## Complex SQL queries
 
 ### How many orders were placed by each customer?
+```sql
 SELECT C.Name AS Customer_Name, COUNT(O.ID_Order) AS Total_Orders
 FROM Customer C
 JOIN Order O ON C.ID_Customer = O.ID_Customer
 GROUP BY C.Name;
-
+```
 ### Is any supplier also a customer?
+```sql
 SELECT S.Name AS Supplier 
 FROM Supplier S 
 JOIN Customer C ON S.CNPJ = C.CNPJ;
-
+```
 ### List of products, suppliers, and stock quantities
+```sql
 SELECT P.Name AS Product, S.Name AS Supplier, P.Stock_Quantity
 FROM Product P 
 JOIN Supplier S ON P.ID_Supplier = S.ID_Supplier;
-
+```
 ### List of supplier names and product names
+```sql
 SELECT S.Name AS Supplier, P.Name AS Product 
 FROM Supplier S 
 JOIN Product P ON S.ID_Supplier = P.ID_Supplier;
-
+```
 ### Total order value per customer
+```sql
 SELECT C.Name AS Customer_Name, SUM(OI.Quantity * P.Price) AS Total_Value 
 FROM Customer C 
 JOIN Order O ON C.ID_Customer = O.ID_Customer 
 JOIN Order_Item OI ON O.ID_Order = OI.ID_Order 
 JOIN Product P ON OI.ID_Product = P.ID_Product 
 GROUP BY C.Name;
-
+```
 ### Products with less than 10 units in stock
+```sql
 SELECT Name, Stock_Quantity 
 FROM Product 
 WHERE Stock_Quantity < 10;
-
+```
 ### Overdue orders
+```sql
 SELECT O.ID_Order, O.Order_Date, D.Delivery_Status 
 FROM Order O 
 JOIN Delivery D ON O.ID_Order = D.ID_Order 
 WHERE D.Delivery_Status = 'Pending' AND O.Order_Date < CURDATE();
-
+```
 # Technologies Used
 Relational Database: MySQL or PostgreSQL
 
 ## Installation Instructions
-Install MySQL or PostgreSQL on your machine.
-Create a new database.
-Run the provided SQL scripts to create tables, insert test data, and create triggers.
-Use a database client (e.g., MySQL Workbench, pgAdmin) to execute the complex SQL queries.
+1. Install MySQL or PostgreSQL on your machine.
+2. Create a new database.
+3. Run the provided SQL scripts to create tables, insert test data, and create triggers.
+4. Use a database client (e.g., MySQL Workbench, pgAdmin) to execute the complex SQL queries.
 
 ## Testing and Execution
-To test the database setup, you can use the provided SQL scripts to create tables and insert test data.
-Execute the complex SQL queries to verify the data and relationships.
-Ensure that the trigger for stock validation works by attempting to insert an order item with a quantity greater than the available stock.
+1. To test the database setup, you can use the provided SQL scripts to create tables and insert test data.
+2. Execute the complex SQL queries to verify the data and relationships.
+3. Ensure that the trigger for stock validation works by attempting to insert an order item with a quantity greater than the available stock.
