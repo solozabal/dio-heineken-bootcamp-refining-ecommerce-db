@@ -1,7 +1,6 @@
-# 🛠️ Mechanical Workshop Service Orders – Database Schema
+# 🗂️ Order Management Database Model – Refinement & UML Diagram
 
 <p align="center">
-  <p align="center">
   <img src="https://img.shields.io/badge/Database-PostgreSQL-blue?logo=postgresql" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/ER%20Model-Mermaid-green" alt="Mermaid ER" />
   <img src="https://img.shields.io/badge/Versioning-Git-black?logo=git" alt="Git" />
@@ -10,7 +9,14 @@
 
 ---
 
-A service order management system for mechanical workshops, complete and ready to use, designed to handle registration of vehicles, customers (individuals and companies), services, parts, employees, orders, payments, and deliveries. The current version brings important improvements, including address normalization, categorization of services and parts, value auditing, batch/validity control, granular status management, and advanced validations to ensure traceability and efficiency.
+This repository presents a **refined database model for order management**. The structure includes well-defined entities such as **Product, Supplier, Customer, and Order**, along with the following new enhancements:
+
+- Support for two customer types: `PF` (individual) and `PJ` (legal entity)
+- Multiple payment methods per order
+- Delivery tracking and status management
+- Designed normalization and improved reference integrity
+
+The project scope covers **database model refinement and UML diagram construction only**. The solution provides a clear, extensible basis for future system development, ensuring data consistency and facilitating visualization for stakeholders.
 
 ---
 
