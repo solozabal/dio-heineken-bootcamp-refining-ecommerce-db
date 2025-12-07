@@ -1,351 +1,648 @@
-# Order Management System
+# 📦 Order Management System
 
-This project is an order management system that allows you to manage products, suppliers, customers, orders, order items, payments, and deliveries.
+Um sistema de gerenciamento de pedidos completo, pronto para uso, projetado para lidar com produtos, fornecedores, clientes (PF/PJ), pedidos, pagamentos e entregas. A versão atual traz melhorias importantes como **normalização de endereços**, **categorização de produtos**, **auditoria de preços**, controle de **lotes/validade**, **status granulares** e validações avançadas.
 
-## Entities and Attributes
+---
 
-### Product
-- **ID_Product** (primary key)
-- **Name**
-- **Description**
-- **Price**
-- **Stock_Quantity**
-- **ID_Supplier** (foreign key, referencing Supplier)
+## 🔎 Principais Melhorias e Refinamentos
 
-### Supplier
-- **ID_Supplier** (primary key)
-- **Name**
-- **CNPJ**
-- **Address**
-- **Phone**
-- **Email**
+1. **Normalização de Endereços**: Endereços são armazenados em tabela única (`Endereco`), referenciados por clientes, fornecedores e pedidos.
+2. **Categorização de Produtos**: Produtos associados a categorias, permitindo segmentação e consultas mais eficientes.
+3. **Histórico de Preços**: Auditoria completa para alterações de preço de produtos.
+4. **Status Granular de Pagamento/Pedido**: Tabelas especializadas para status e ordens customizadas no fluxo.
+5. **Auditoria Temporal**: Campos de `created_at`/`updated_at` em todas as principais tabelas, triggers de histórico.
+6. **Validação Avançada de Email/Telefone**: Usando constraints nativas do SQL para garantir integridade.
+7. **Controle de Lotes e Validade**: Controle completo de número de lote, fabricação e validade.
+8. **Transportadora Especializada**: Entregas agora podem estar vinculadas à transportadora cadastrada.
+9. **Índices Compostos**: Para melhoria da performance nas principais queries.
+10. **Relatório e Consultas Avançadas**: Novos exemplos para extração de insights operacionais.
 
-### Customer
-- **ID_Customer** (primary key)
-- **Name**
-- **Customer_Type** (enum: 'PF' - Pessoa Física, 'PJ' - Pessoa Jurídica) // Identifies if the customer is an individual or a company
-- **CPF** (unique field, required if Customer_Type = 'PF')
-- **CNPJ** (unique field, required if Customer_Type = 'PJ')
-- **Address**
-- **Phone**
-- **Email**
+---
 
-### Order
-- **ID_Order** (primary key)
-- **ID_Customer** (foreign key, referencing Customer)
-- **Order_Date**
-- **Status** (e.g., Pending, Shipped, Canceled)
-- **Delivery_Address**
-- **Shipping_Cost**
-- **Delivery_Status** (e.g., Pending, In Transit, Delivered)
-- **Tracking_Code**
+## 🗂️ Entidades e Atributos
 
-### Order_Item
-- **ID_Order_Item** (primary key)
-- **ID_Order** (foreign key, referencing Order)
-- **ID_Product** (foreign key, referencing Product)
-- **Quantity**
+<details>
+<summary><strong>Endereco</strong></summary>
 
-### Payment
-- **ID_Payment** (primary key)
-- **ID_Order** (foreign key, referencing Order)
-- **Payment_Type** (e.g., Credit Card, Boleto, Transfer)
-- **Payment_Date**
-- **Amount_Paid**
+- `ID_Endereco` (chave primária)
+- CEP
+- Logradouro
+- Número
+- Complemento
+- Bairro
+- Cidade
+- Estado
+- created_at
+</details>
 
-### Delivery (optional)
-- **ID_Delivery** (primary key)
-- **ID_Order** (foreign key, referencing Order)
-- **Delivery_Status** (e.g., Pending, In Transit, Delivered)
-- **Tracking_Code**
-- **Estimated_Delivery_Date**
+<details>
+<summary><strong>Categoria</strong></summary>
 
-## Relationships
-- A supplier can supply many products; each product is supplied by only one supplier (one-to-many).
-- A customer can place multiple orders (one-to-many).
-- An order can contain multiple products; a product can be in multiple orders (many-to-many).
-- An order can have multiple associated payment methods.
-- Each order can have one or more associated deliveries.
+- `ID_Categoria` (chave primária)
+- Nome
+- Descricao
+- created_at
+</details>
 
-## UML Diagram
+<details>
+<summary><strong>Fornecedor</strong></summary>
+
+- `ID_Supplier` (chave primária)
+- Nome
+- CNPJ (único)
+- `ID_Endereco` (chave estrangeira)
+- Telefone
+- Email
+- created_at
+- updated_at
+</details>
+
+<details>
+<summary><strong>Produto</strong></summary>
+
+- `ID_Product` (chave primária)
+- Nome
+- Descricao
+- Preco
+- Quantidade_Estoque
+- `ID_Supplier` (chave estrangeira)
+- `ID_Categoria` (chave estrangeira)
+- created_at
+- updated_at
+</details>
+
+<details>
+<summary><strong>Lote</strong></summary>
+
+- `ID_Lote` (chave primária)
+- `ID_Product` (chave estrangeira)
+- Numero_Lote
+- Quantidade
+- Data_Fabricacao
+- Data_Validade
+</details>
+
+<details>
+<summary><strong>Cliente</strong></summary>
+
+- `ID_Customer` (chave primária)
+- Nome
+- Tipo_Cliente (enum: 'PF', 'PJ')
+- CPF (obrigatório se PF)
+- CNPJ (obrigatório se PJ)
+- `ID_Endereco` (chave estrangeira)
+- Telefone (com validação)
+- Email (com validação)
+- created_at
+</details>
+
+<details>
+<summary><strong>Pedido</strong></summary>
+
+- `ID_Order` (chave primária)
+- `ID_Customer` (chave estrangeira)
+- Data_Pedido
+- Status (`ID_Status_Pedido` referência)
+- `ID_Endereco_Entrega` (chave estrangeira)
+- Custo_Envio
+- Código_Rastreio
+- created_at
+</details>
+
+<details>
+<summary><strong>Item_Pedido</strong></summary>
+
+- `ID_Order_Item` (chave primária)
+- `ID_Order` (chave estrangeira)
+- `ID_Product` (chave estrangeira)
+- Quantidade
+</details>
+
+<details>
+<summary><strong>Pagamento</strong></summary>
+
+- `ID_Payment` (chave primária)
+- `ID_Order` (chave estrangeira)
+- Tipo_Pagamento (Cartão, Boleto, Transferência)
+- Data_Pagamento
+- Valor_Pago
+- Status (`ID_Status` referência)
+</details>
+
+<details>
+<summary><strong>Status_Pedido</strong></summary>
+
+- `ID_Status_Pedido` (chave primária)
+- Descricao
+- Ordem
+</details>
+
+<details>
+<summary><strong>Status_Pagamento</strong></summary>
+
+- `ID_Status` (chave primária)
+- Descricao
+</details>
+
+<details>
+<summary><strong>Entrega</strong></summary>
+
+- `ID_Delivery` (chave primária)
+- `ID_Order` (chave estrangeira)
+- Status_Entrega (Pendente, Em Trânsito, Entregue)
+- Código_Rastreio
+- Data_Estimada_Entrega
+- `ID_Transportadora` (chave estrangeira)
+</details>
+
+<details>
+<summary><strong>Transportadora</strong></summary>
+
+- `ID_Transportadora` (chave primária)
+- Nome
+- CNPJ (único)
+- Telefone
+- Email
+- created_at
+</details>
+
+<details>
+<summary><strong>Historico_Preco</strong></summary>
+
+- `ID_Historico` (chave primária)
+- `ID_Product` (chave estrangeira)
+- Preco_Antigo
+- Preco_Novo
+- Data_Alteracao
+</details>
+
+---
+
+## 🔗 Relacionamentos
+
+- **Fornecedor → Produto** (1:N)
+- **Fornecedor → Endereco** (1:1)
+- **Produto → Categoria** (N:1)
+- **Produto → Lote** (1:N)
+- **Produto → Historico_Preco** (1:N)
+- **Cliente → Pedido** (1:N)
+- **Cliente → Endereco** (1:1)
+- **Pedido → Item_Pedido** (1:N)
+- **Pedido → Status_Pedido** (N:1)
+- **Pedido → Pagamento** (1:N)
+- **Pagamento → Status_Pagamento** (N:1)
+- **Entrega → Transportadora** (N:1)
+- **Entrega → Pedido** (N:1)
+- **Produto → Item_Pedido** (N:1)
+
+---
+
+## 🧠 Diagrama ER/UML Atualizado
 
 ```mermaid
-classDiagram
-    class Product {
-        +ID_Product: int <<PK>>
-        +Name: string
-        +Description: string
-        +Price: decimal
-        +Stock_Quantity: int
-        +ID_Supplier: int <<FK>>
-    }
+erDiagram
+    Fornecedor ||--o{ Produto : fornece
+    Produto }o--|| Categoria : pertence_a
+    Produto ||--o{ Lote : possui
+    Produto ||--o{ Historico_Preco : histórico
+    Cliente ||--o{ Pedido : realiza
+    Cliente }o--|| Endereco : possui
+    Pedido ||--o{ Item_Pedido : contém
+    Pedido ||--o{ Pagamento : possui
+    Pedido }o--|| Status_Pedido : status
+    Item_Pedido }o--|| Produto : refere_se_a
+    Pagamento }o--|| Status_Pagamento : status
+    Entrega ||--o{ Pedido : corresponde_a
+    Entrega }o--|| Transportadora : utiliza
 
-    class Supplier {
-        +ID_Supplier: int <<PK>>
-        +Name: string
-        +CNPJ: string
-        +Address: string
-        +Phone: string
-        +Email: string
+    Fornecedor {
+        int ID_Supplier PK
+        string Nome
+        string CNPJ UK
+        string Telefone
+        string Email
+        int ID_Endereco FK
+        timestamp created_at
+        timestamp updated_at
     }
-
-    class Customer {
-        +ID_Customer: int <<PK>>
-        +Name: string
-        +Customer_Type: enum <<PF, PJ>>
-        +CPF: string <<unique>>
-        +CNPJ: string <<unique>>
-        +Address: string
-        +Phone: string
-        +Email: string
+    
+    Produto {
+        int ID_Product PK
+        string Nome
+        string Descrição
+        decimal Preço
+        int Quantidade_Estoque
+        int ID_Supplier FK
+        int ID_Categoria FK
+        timestamp created_at
+        timestamp updated_at
     }
-
-    class Order {
-        +ID_Order: int <<PK>>
-        +ID_Customer: int <<FK>>
-        +Order_Date: date
-        +Status: enum <<Pending, Shipped, Canceled>>
-        +Delivery_Address: string
-        +Shipping_Cost: decimal
-        +Tracking_Code: string
+    
+    Categoria {
+        int ID_Categoria PK
+        string Nome
+        string Descricao
+        timestamp created_at
     }
-
-    class Order_Item {
-        +ID_Order_Item: int <<PK>>
-        +ID_Order: int <<FK>>
-        +ID_Product: int <<FK>>
-        +Quantity: int
+    
+    Cliente {
+        int ID_Customer PK
+        string Nome
+        enum Tipo_Cliente
+        string CPF UK
+        string CNPJ UK
+        int ID_Endereco FK
+        string Telefone
+        string Email
+        timestamp created_at
     }
-
-    class Payment {
-        +ID_Payment: int <<PK>>
-        +ID_Order: int <<FK>>
-        +Payment_Type: enum <<Credit Card, Boleto, Transfer>>
-        +Payment_Date: date
-        +Amount_Paid: decimal
+    
+    Pedido {
+        int ID_Order PK
+        int ID_Customer FK
+        date Data_Pedido
+        int Status FK
+        int ID_Endereco_Entrega FK
+        decimal Custo_Envio
+        string Código_Rastreio
+        timestamp created_at
     }
-
-    class Delivery {
-        +ID_Delivery: int <<PK>>
-        +ID_Order: int <<FK>>
-        +Delivery_Status: enum <<Pending, In Transit, Delivered>>
-        +Tracking_Code: string
-        +Estimated_Delivery_Date: date
+    
+    Item_Pedido {
+        int ID_Order_Item PK
+        int ID_Order FK
+        int ID_Product FK
+        int Quantidade
     }
-
-    %% Relationships %%
-    Supplier "1" -- "0..*" Product : supplies >
-    Customer "1" -- "0..*" Order : places >
-    Order "1" -- "0..*" Order_Item : contains >
-    Product "1" -- "0..*" Order_Item : is in >
-    Order "1" -- "0..*" Payment : has >
-    Order "1" -- "0..*" Delivery : has >
+    
+    Pagamento {
+        int ID_Payment PK
+        int ID_Order FK
+        enum Tipo_Pagamento
+        date Data_Pagamento
+        decimal Valor_Pago
+        int ID_Status FK
+    }
+    
+    Historico_Preco {
+        int ID_Historico PK
+        int ID_Product FK
+        decimal Preco_Antigo
+        decimal Preco_Novo
+        timestamp Data_Alteracao
+    }
+    
+    Lote {
+        int ID_Lote PK
+        int ID_Product FK
+        string Numero_Lote
+        int Quantidade
+        date Data_Fabricacao
+        date Data_Validade
+    }
+    
+    Status_Pedido {
+        int ID_Status_Pedido PK
+        string Descricao
+        int Ordem
+    }
+    
+    Status_Pagamento {
+        int ID_Status PK
+        string Descricao
+    }
+    
+    Entrega {
+        int ID_Delivery PK
+        int ID_Order FK
+        enum Status_Entrega
+        string Código_Rastreio
+        date Data_Estimada_Entrega
+        int ID_Transportadora FK
+    }
+    
+    Transportadora {
+        int ID_Transportadora PK
+        string Nome
+        string CNPJ UK
+        string Telefone
+        string Email
+        timestamp created_at
+    }
 ```
-# Database Schema
 
-## Creating the Supplier table
+---
+
+## 🛠️ Script de Banco de Dados (MySQL 8+)
+
 ```sql
-CREATE TABLE Supplier (
+-- ============================================
+-- TABELAS BASE DE REFERÊNCIA
+-- ============================================
+CREATE TABLE Endereco (
+    ID_Endereco INT PRIMARY KEY AUTO_INCREMENT,
+    CEP CHAR(8) NOT NULL,
+    Logradouro VARCHAR(150) NOT NULL,
+    Numero VARCHAR(10),
+    Complemento VARCHAR(100),
+    Bairro VARCHAR(100) NOT NULL,
+    Cidade VARCHAR(100) NOT NULL,
+    Estado CHAR(2) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Categoria (
+    ID_Categoria INT PRIMARY KEY AUTO_INCREMENT,
+    Nome VARCHAR(100) NOT NULL,
+    Descricao TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Status_Pedido (
+    ID_Status_Pedido INT PRIMARY KEY AUTO_INCREMENT,
+    Descricao VARCHAR(50) NOT NULL UNIQUE,
+    Ordem INT NOT NULL
+);
+
+CREATE TABLE Status_Pagamento (
+    ID_Status INT PRIMARY KEY AUTO_INCREMENT,
+    Descricao VARCHAR(50) NOT NULL UNIQUE
+);
+
+CREATE TABLE Transportadora (
+    ID_Transportadora INT PRIMARY KEY AUTO_INCREMENT,
+    Nome VARCHAR(100) NOT NULL,
+    CNPJ CHAR(14) UNIQUE,
+    Telefone VARCHAR(15),
+    Email VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ============================================
+-- TABELAS PRINCIPAIS
+-- ============================================
+CREATE TABLE Fornecedor (
     ID_Supplier INT PRIMARY KEY AUTO_INCREMENT,
-    Name VARCHAR(100) NOT NULL,
+    Nome VARCHAR(100) NOT NULL,
     CNPJ CHAR(14) NOT NULL UNIQUE,
-    Address VARCHAR(255),
-    Phone VARCHAR(15),
-    Email VARCHAR(100)
+    ID_Endereco INT,
+    Telefone VARCHAR(15),
+    Email VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (ID_Endereco) REFERENCES Endereco(ID_Endereco)
 );
-```
 
-## Creating the Product table
-```sql
-CREATE TABLE Product (
+CREATE TABLE Produto (
     ID_Product INT PRIMARY KEY AUTO_INCREMENT,
-    Name VARCHAR(100) NOT NULL,
-    Description TEXT,
-    Price DECIMAL(10, 2) NOT NULL,
-    Stock_Quantity INT NOT NULL,
+    Nome VARCHAR(100) NOT NULL,
+    Descricao TEXT,
+    Preco DECIMAL(10,2) NOT NULL,
+    Quantidade_Estoque INT NOT NULL DEFAULT 0,
     ID_Supplier INT NOT NULL,
-    FOREIGN KEY (ID_Supplier) REFERENCES Supplier(ID_Supplier)
+    ID_Categoria INT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (ID_Supplier) REFERENCES Fornecedor(ID_Supplier),
+    FOREIGN KEY (ID_Categoria) REFERENCES Categoria(ID_Categoria)
 );
-```
-## Creating the Customer table
-```sql
-CREATE TABLE Customer (
+
+CREATE TABLE Cliente (
     ID_Customer INT PRIMARY KEY AUTO_INCREMENT,
-    Name VARCHAR(100) NOT NULL,
-    Customer_Type ENUM('PF', 'PJ') NOT NULL,
+    Nome VARCHAR(100) NOT NULL,
+    Tipo_Cliente ENUM('PF', 'PJ') NOT NULL,
     CPF CHAR(11) UNIQUE,
     CNPJ CHAR(14) UNIQUE,
-    Address VARCHAR(255),
-    Phone VARCHAR(15),
+    ID_Endereco INT,
+    Telefone VARCHAR(15),
     Email VARCHAR(100),
-    CHECK ((Customer_Type = 'PF' AND CPF IS NOT NULL AND CNPJ IS NULL) OR
-           (Customer_Type = 'PJ' AND CNPJ IS NOT NULL AND CPF IS NULL))
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_tipo_documento CHECK (
+        (Tipo_Cliente = 'PF' AND CPF IS NOT NULL AND CNPJ IS NULL) OR
+        (Tipo_Cliente = 'PJ' AND CNPJ IS NOT NULL AND CPF IS NULL)
+    ),
+    CONSTRAINT chk_email CHECK (
+        Email REGEXP '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$'
+    ),
+    CONSTRAINT chk_telefone CHECK (
+        Telefone REGEXP '^[1-9]{2}[0-9]{8,9}$'
+    ),
+    FOREIGN KEY (ID_Endereco) REFERENCES Endereco(ID_Endereco)
 );
-```
 
-## Creating the Order table
-```sql
-CREATE TABLE Order (
+CREATE TABLE Pedido (
     ID_Order INT PRIMARY KEY AUTO_INCREMENT,
     ID_Customer INT NOT NULL,
-    Order_Date DATE NOT NULL,
-    Status ENUM('Pending', 'Shipped', 'Canceled') NOT NULL,
-    Delivery_Address VARCHAR(255),
-    Shipping_Cost DECIMAL(10, 2),
-    Tracking_Code VARCHAR(50),
-    FOREIGN KEY (ID_Customer) REFERENCES Customer(ID_Customer)
+    Data_Pedido DATE NOT NULL,
+    Status INT NOT NULL, -- Chave para Status_Pedido
+    ID_Endereco_Entrega INT,
+    Custo_Envio DECIMAL(10,2) DEFAULT 0,
+    Código_Rastreio VARCHAR(50),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ID_Customer) REFERENCES Cliente(ID_Customer),
+    FOREIGN KEY (Status) REFERENCES Status_Pedido(ID_Status_Pedido),
+    FOREIGN KEY (ID_Endereco_Entrega) REFERENCES Endereco(ID_Endereco)
 );
-```
-## CREATE TABLE Order_Item (
-```sql
+
+CREATE TABLE Item_Pedido (
     ID_Order_Item INT PRIMARY KEY AUTO_INCREMENT,
     ID_Order INT NOT NULL,
     ID_Product INT NOT NULL,
-    Quantity INT NOT NULL,
-    FOREIGN KEY (ID_Order) REFERENCES Order(ID_Order),
-    FOREIGN KEY (ID_Product) REFERENCES Product(ID_Product)
+    Quantidade INT NOT NULL,
+    FOREIGN KEY (ID_Order) REFERENCES Pedido(ID_Order),
+    FOREIGN KEY (ID_Product) REFERENCES Produto(ID_Product)
 );
-```
-## CREATE TABLE Payment (
-```sql
+
+CREATE TABLE Pagamento (
     ID_Payment INT PRIMARY KEY AUTO_INCREMENT,
     ID_Order INT NOT NULL,
-    Payment_Type ENUM('Credit Card', 'Boleto', 'Transfer') NOT NULL,
-    Payment_Date DATE NOT NULL,
-    Amount_Paid DECIMAL(10, 2) NOT NULL,
-    FOREIGN KEY (ID_Order) REFERENCES Order(ID_Order)
+    Tipo_Pagamento ENUM('Cartão', 'Boleto', 'Transferência'),
+    Data_Pagamento DATE,
+    Valor_Pago DECIMAL(10,2),
+    ID_Status INT DEFAULT 1,
+    FOREIGN KEY (ID_Order) REFERENCES Pedido(ID_Order),
+    FOREIGN KEY (ID_Status) REFERENCES Status_Pagamento(ID_Status)
 );
-```
-## Creating the Delivery table
-```sql
-CREATE TABLE Delivery (
+
+CREATE TABLE Entrega (
     ID_Delivery INT PRIMARY KEY AUTO_INCREMENT,
     ID_Order INT NOT NULL,
-    Delivery_Status ENUM('Pending', 'In Transit', 'Delivered') NOT NULL,
-    Tracking_Code VARCHAR(50),
-    Estimated_Delivery_Date DATE,
-    FOREIGN KEY (ID_Order) REFERENCES Order(ID_Order)
+    Status_Entrega ENUM('Pendente', 'Em Trânsito', 'Entregue'),
+    Código_Rastreio VARCHAR(50),
+    Data_Estimada_Entrega DATE,
+    ID_Transportadora INT,
+    FOREIGN KEY (ID_Order) REFERENCES Pedido(ID_Order),
+    FOREIGN KEY (ID_Transportadora) REFERENCES Transportadora(ID_Transportadora)
 );
-```
-## Inserting test data
-```sql
-INSERT INTO Supplier (Name, CNPJ, Address, Phone, Email)
-VALUES
-('Supplier A', '12345678000195', 'Street A, 123', '11987654321', 'supplierA@email.com'),
-('Supplier B', '98765432000188', 'Street B, 456', '11987654322', 'supplierB@email.com');
 
-INSERT INTO Product (Name, Description, Price, Stock_Quantity, ID_Supplier)
-VALUES
-('Product 1', 'Description of Product 1', 100.00, 50, 1),
-('Product 2', 'Description of Product 2', 150.00, 30, 2);
+CREATE TABLE Lote (
+    ID_Lote INT PRIMARY KEY AUTO_INCREMENT,
+    ID_Product INT NOT NULL,
+    Numero_Lote VARCHAR(50) NOT NULL,
+    Quantidade INT NOT NULL,
+    Data_Fabricacao DATE,
+    Data_Validade DATE,
+    FOREIGN KEY (ID_Product) REFERENCES Produto(ID_Product)
+);
 
-INSERT INTO Customer (Name, Customer_Type, CPF, Address, Phone, Email, CNPJ)
-VALUES
-('Customer PF', 'PF', '12345678901', 'Street Customer PF, 123', '11987654323', 'customerPF@email.com', NULL),
-('Customer PJ', 'PJ', NULL, 'Street Customer PJ, 456', '11987654324', 'customerPJ@email.com', '09876543000199');
+CREATE TABLE Historico_Preco (
+    ID_Historico INT PRIMARY KEY AUTO_INCREMENT,
+    ID_Product INT NOT NULL,
+    Preco_Antigo DECIMAL(10,2),
+    Preco_Novo DECIMAL(10,2) NOT NULL,
+    Data_Alteracao TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ID_Product) REFERENCES Produto(ID_Product)
+);
 
-INSERT INTO Order (ID_Customer, Order_Date, Status, Delivery_Address, Shipping_Cost, Tracking_Code)
-VALUES
-(1, '2024-01-15', 'Pending', 'Street Customer PF, 123', 15.00, 'TRACK1234'),
-(2, '2024-01-15', 'Shipped', 'Street Customer PJ, 456', 20.00, 'TRACK5678');
+-- ============================================
+-- STATUS/TIPOS DE PEDIDO E PAGAMENTO (DADOS)
+-- ============================================
+INSERT INTO Status_Pedido (Descricao, Ordem) VALUES
+('Novo', 1), ('Em Processamento', 2), ('Aguardando Pagamento', 3),
+('Pago', 4), ('Preparando Envio', 5), ('Enviado', 6),
+('Em Trânsito', 7), ('Entregue', 8), ('Cancelado', 9);
 
-INSERT INTO Order_Item (ID_Order, ID_Product, Quantity)
-VALUES
-(1, 1, 2),
-(2, 2, 1);
+INSERT INTO Status_Pagamento (Descricao) VALUES 
+('Pendente'), ('Pago'), ('Estornado'), ('Cancelado'), ('Em Processamento');
 
-INSERT INTO Payment (ID_Order, Payment_Type, Payment_Date, Amount_Paid)
-VALUES
-(1, 'Credit Card', '2024-01-15', 200.00),
-(2, 'Boleto', '2024-01-15', 150.00);
+-- ============================================
+-- ÍNDICES OTIMIZADOS
+-- ============================================
+CREATE INDEX idx_pedido_status_data ON Pedido(Status, Data_Pedido);
+CREATE INDEX idx_produto_categoria ON Produto(ID_Categoria, Preco);
+CREATE INDEX idx_item_pedido_completo ON Item_Pedido(ID_Order, ID_Product);
+CREATE INDEX idx_cliente_tipo ON Cliente(Tipo_Cliente, created_at);
 
-INSERT INTO Delivery (ID_Order, Delivery_Status, Tracking_Code)
-VALUES
-(1, 'Pending', 'TRACK1234'),
-(2, 'In Transit', 'TRACK5678');
-```
-## Adding indexes
-```sql
-CREATE INDEX idx_order_customer ON Order(ID_Customer);
-CREATE INDEX idx_order_item_product ON Order_Item(ID_Product);
-```
-## Creating trigger for stock validation
-```sql
-DELIMITER $$
-CREATE TRIGGER trg_check_stock BEFORE INSERT ON Order_Item
+-- ============================================
+-- AUDITORIA DE ALTERAÇÕES DE PRODUTO
+-- ============================================
+DELIMITER //
+CREATE TRIGGER trg_audita_preco_produto
+AFTER UPDATE ON Produto
 FOR EACH ROW
 BEGIN
-    DECLARE stock_available INT;
-    
-    SELECT Stock_Quantity INTO stock_available 
-    FROM Product 
-    WHERE ID_Product = NEW.ID_Product;
-
-    IF stock_available < NEW.Quantity THEN
-        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Insufficient stock';
+    IF OLD.Preco <> NEW.Preco THEN
+        INSERT INTO Historico_Preco (ID_Product, Preco_Antigo, Preco_Novo)
+        VALUES (NEW.ID_Product, OLD.Preco, NEW.Preco);
     END IF;
-END$$
+END;
+//
 DELIMITER ;
-```
-## Complex SQL queries
 
-### How many orders were placed by each customer?
-```sql
-SELECT C.Name AS Customer_Name, COUNT(O.ID_Order) AS Total_Orders
-FROM Customer C
-JOIN Order O ON C.ID_Customer = O.ID_Customer
-GROUP BY C.Name;
-```
-### Is any supplier also a customer?
-```sql
-SELECT S.Name AS Supplier 
-FROM Supplier S 
-JOIN Customer C ON S.CNPJ = C.CNPJ;
-```
-### List of products, suppliers, and stock quantities
-```sql
-SELECT P.Name AS Product, S.Name AS Supplier, P.Stock_Quantity
-FROM Product P 
-JOIN Supplier S ON P.ID_Supplier = S.ID_Supplier;
-```
-### List of supplier names and product names
-```sql
-SELECT S.Name AS Supplier, P.Name AS Product 
-FROM Supplier S 
-JOIN Product P ON S.ID_Supplier = P.ID_Supplier;
-```
-### Total order value per customer
-```sql
-SELECT C.Name AS Customer_Name, SUM(OI.Quantity * P.Price) AS Total_Value 
-FROM Customer C 
-JOIN Order O ON C.ID_Customer = O.ID_Customer 
-JOIN Order_Item OI ON O.ID_Order = OI.ID_Order 
-JOIN Product P ON OI.ID_Product = P.ID_Product 
-GROUP BY C.Name;
-```
-### Products with less than 10 units in stock
-```sql
-SELECT Name, Stock_Quantity 
-FROM Product 
-WHERE Stock_Quantity < 10;
-```
-### Overdue orders
-```sql
-SELECT O.ID_Order, O.Order_Date, D.Delivery_Status 
-FROM Order O 
-JOIN Delivery D ON O.ID_Order = D.ID_Order 
-WHERE D.Delivery_Status = 'Pending' AND O.Order_Date < CURDATE();
-```
-# Technologies Used
-Relational Database: MySQL or PostgreSQL
+-- ============================================
+-- INSERTS DE TESTE
+-- ============================================
+INSERT INTO Fornecedor (Nome, CNPJ, Telefone, Email) VALUES
+('Fornecedor Alpha', '12345678000195', '11987654321', 'alpha@email.com'),
+('Fornecedor Beta', '98765432000188', '11987654322', 'beta@email.com');
 
-## Installation Instructions
-1. Install MySQL or PostgreSQL on your machine.
-2. Create a new database.
-3. Run the provided SQL scripts to create tables, insert test data, and create triggers.
-4. Use a database client (e.g., MySQL Workbench, pgAdmin) to execute the complex SQL queries.
+INSERT INTO Categoria (Nome, Descricao) VALUES
+('Eletrônicos', 'Produtos eletrônicos diversos'),
+('Alimentos', 'Produtos alimentícios');
 
-## Testing and Execution
-1. To test the database setup, you can use the provided SQL scripts to create tables and insert test data.
-2. Execute the complex SQL queries to verify the data and relationships.
-3. Ensure that the trigger for stock validation works by attempting to insert an order item with a quantity greater than the available stock.
+-- ... demais inserts conforme entidades ...
+```
+
+---
+
+## 📊 Consultas Avançadas
+
+```sql
+-- 1. Histórico de alterações de preço
+SELECT 
+    P.Nome AS Produto,
+    HP.Preco_Antigo,
+    HP.Preco_Novo,
+    HP.Data_Alteracao
+FROM Historico_Preco HP
+JOIN Produto P ON HP.ID_Product = P.ID_Product
+ORDER BY HP.Data_Alteracao DESC;
+
+-- 2. Produtos por categoria com estoque crítico
+SELECT 
+    C.Nome AS Categoria,
+    P.Nome AS Produto,
+    P.Quantidade_Estoque,
+    CASE 
+        WHEN P.Quantidade_Estoque < 10 THEN 'CRÍTICO'
+        WHEN P.Quantidade_Estoque < 50 THEN 'BAIXO'
+        ELSE 'NORMAL'
+    END AS Status_Estoque
+FROM Produto P
+JOIN Categoria C ON P.ID_Categoria = C.ID_Categoria
+WHERE P.Quantidade_Estoque < 50
+ORDER BY P.Quantidade_Estoque ASC;
+
+-- 3. Análise de vendas por período e categoria
+SELECT 
+    DATE_FORMAT(Pe.Data_Pedido, '%Y-%m') AS Mes,
+    C.Nome AS Categoria,
+    COUNT(DISTINCT Pe.ID_Order) AS Total_Pedidos,
+    SUM(I.Quantidade) AS Quantidade_Vendida,
+    SUM(I.Quantidade * P.Preco) AS Valor_Total
+FROM Pedido Pe
+JOIN Item_Pedido I ON Pe.ID_Order = I.ID_Order
+JOIN Produto P ON I.ID_Product = P.ID_Product
+JOIN Categoria C ON P.ID_Categoria = C.ID_Categoria
+WHERE Pe.Data_Pedido >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+GROUP BY Mes, C.Nome
+ORDER BY Mes DESC, Valor_Total DESC;
+
+-- 4. Transportadoras com melhor desempenho
+SELECT 
+    T.Nome AS Transportadora,
+    COUNT(E.ID_Delivery) AS Total_Entregas,
+    AVG(DATEDIFF(E.Data_Entrega_Real, Pe.Data_Pedido)) AS Dias_Medios,
+    SUM(CASE WHEN E.Status_Entrega = 'Entregue' THEN 1 ELSE 0 END) / COUNT(*) * 100 AS Taxa_Sucesso
+FROM Entrega E
+JOIN Transportadora T ON E.ID_Transportadora = T.ID_Transportadora
+JOIN Pedido Pe ON E.ID_Order = Pe.ID_Order
+GROUP BY T.ID_Transportadora
+HAVING COUNT(E.ID_Delivery) >= 5
+ORDER BY Taxa_Sucesso DESC;
+```
+
+---
+
+## 🚀 Tecnologias Utilizadas
+
+- **Banco de Dados:** MySQL 8+ ou PostgreSQL 14+
+- **Modelagem:** Mermaid, MySQL Workbench, pgAdmin
+- **Versionamento:** Git
+
+---
+
+## 📦 Instalação e Execução
+
+```bash
+git clone https://github.com/seu-usuario/order-management-system.git
+cd order-management-system
+mysql -u root -p < database/schema.sql
+mysql -u root -p < database/seed.sql
+mysql -u root -p < database/queries.sql
+```
+
+---
+
+## ✅ Testes e Validação
+
+- Insira itens em estoque menor que o disponível e verifique o manejo.
+- Valide constraints de CPF/CNPJ, e o correto vínculo de endereços.
+- Teste validação de email e telefone (MySQL 8+).
+- Simule alteração de preço e verifique entradas em `Historico_Preco`.
+- Teste consultas para garantir relacionamentos funcionais.
+- Valide integridade ao excluir clientes com pedidos vinculados.
+
+---
+
+## 💡 License
+
+This project is licensed under the MIT License.
+
+---
+
+<p align="center">
+  <a href="https://www.linkedin.com/in/pedrosolozabal/">
+    <img src="https://img.shields.io/badge/Pedro%20Solozabal-LinkedIn-blue?logo=linkedin&logoColor=white&style=for-the-badge" alt="Pedro Solozabal on LinkedIn">
+  </a>
+</p>
