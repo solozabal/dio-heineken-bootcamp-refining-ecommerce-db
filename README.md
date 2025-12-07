@@ -1,25 +1,35 @@
-# 📦 Order Management System
+# 🛠️ Mechanical Workshop Service Orders – Database Schema
 
-Um sistema de gerenciamento de pedidos completo, pronto para uso, projetado para lidar com produtos, fornecedores, clientes (PF/PJ), pedidos, pagamentos e entregas. A versão atual traz melhorias importantes como **normalização de endereços**, **categorização de produtos**, **auditoria de preços**, controle de **lotes/validade**, **status granulares** e validações avançadas.
-
----
-
-## 🔎 Principais Melhorias e Refinamentos
-
-1. **Normalização de Endereços**: Endereços são armazenados em tabela única (`Endereco`), referenciados por clientes, fornecedores e pedidos.
-2. **Categorização de Produtos**: Produtos associados a categorias, permitindo segmentação e consultas mais eficientes.
-3. **Histórico de Preços**: Auditoria completa para alterações de preço de produtos.
-4. **Status Granular de Pagamento/Pedido**: Tabelas especializadas para status e ordens customizadas no fluxo.
-5. **Auditoria Temporal**: Campos de `created_at`/`updated_at` em todas as principais tabelas, triggers de histórico.
-6. **Validação Avançada de Email/Telefone**: Usando constraints nativas do SQL para garantir integridade.
-7. **Controle de Lotes e Validade**: Controle completo de número de lote, fabricação e validade.
-8. **Transportadora Especializada**: Entregas agora podem estar vinculadas à transportadora cadastrada.
-9. **Índices Compostos**: Para melhoria da performance nas principais queries.
-10. **Relatório e Consultas Avançadas**: Novos exemplos para extração de insights operacionais.
+<p align="center">
+  <p align="center">
+  <img src="https://img.shields.io/badge/Database-PostgreSQL-blue?logo=postgresql" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/ER%20Model-Mermaid-green" alt="Mermaid ER" />
+  <img src="https://img.shields.io/badge/Versioning-Git-black?logo=git" alt="Git" />
+  <img src="https://img.shields.io/badge/license-MIT-green?logo=open-source-initiative" alt="MIT License" />
+</p>
 
 ---
 
-## 🗂️ Entidades e Atributos
+A service order management system for mechanical workshops, complete and ready to use, designed to handle registration of vehicles, customers (individuals and companies), services, parts, employees, orders, payments, and deliveries. The current version brings important improvements, including address normalization, categorization of services and parts, value auditing, batch/validity control, granular status management, and advanced validations to ensure traceability and efficiency.
+
+---
+
+## 🔎 Main Improvements and Refinements
+
+1. **Address Normalization**: Addresses are stored in a single table (`Endereco`), referenced by customers, suppliers, and orders.
+2. **Product Categorization**: Products are associated with categories, enabling segmentation and more efficient queries.
+3. **Price History**: Complete audit trail for product price changes.
+4. **Granular Payment/Order Status**: Specialized tables for statuses and custom workflow ordering.
+5. **Temporal Auditing**: `created_at`/`updated_at` fields in all main tables, with history triggers.
+6. **Advanced Email/Phone Validation**: Using native SQL constraints to ensure integrity.
+7. **Batch and Validity Control**: Full control over batch numbers, manufacturing, and expiration dates.
+8. **Specialized Carrier**: Deliveries can now be linked to registered carriers.
+9. **Composite Indexes**: For improved performance in key queries.
+10. **Advanced Reporting and Queries**: New examples for extracting operational insights.
+
+---
+
+## 🗂️ Entities and Attributes
 
 <details>
 <summary><strong>Endereco</strong></summary>
@@ -178,7 +188,7 @@ Um sistema de gerenciamento de pedidos completo, pronto para uso, projetado para
 
 ---
 
-## 🔗 Relacionamentos
+## 🔗 Relationships
 
 - **Fornecedor → Produto** (1:N)
 - **Fornecedor → Endereco** (1:1)
@@ -197,7 +207,7 @@ Um sistema de gerenciamento de pedidos completo, pronto para uso, projetado para
 
 ---
 
-## 🧠 Diagrama ER/UML Atualizado
+## 🧠 Diagram ER/UML
 
 ```mermaid
 erDiagram
@@ -333,11 +343,11 @@ erDiagram
 
 ---
 
-## 🛠️ Script de Banco de Dados (MySQL 8+)
+## 🛠️ Data Bank Script (MySQL 8+)
 
 ```sql
 -- ============================================
--- TABELAS BASE DE REFERÊNCIA
+--            REFERENCE TABLES
 -- ============================================
 CREATE TABLE Endereco (
     ID_Endereco INT PRIMARY KEY AUTO_INCREMENT,
@@ -379,7 +389,7 @@ CREATE TABLE Transportadora (
 );
 
 -- ============================================
--- TABELAS PRINCIPAIS
+--             MAIN TABLES
 -- ============================================
 CREATE TABLE Fornecedor (
     ID_Supplier INT PRIMARY KEY AUTO_INCREMENT,
@@ -495,7 +505,7 @@ CREATE TABLE Historico_Preco (
 );
 
 -- ============================================
--- STATUS/TIPOS DE PEDIDO E PAGAMENTO (DADOS)
+--    ORDER STATUS/TYPES AND PAYMENT (DATA)
 -- ============================================
 INSERT INTO Status_Pedido (Descricao, Ordem) VALUES
 ('Novo', 1), ('Em Processamento', 2), ('Aguardando Pagamento', 3),
@@ -506,7 +516,7 @@ INSERT INTO Status_Pagamento (Descricao) VALUES
 ('Pendente'), ('Pago'), ('Estornado'), ('Cancelado'), ('Em Processamento');
 
 -- ============================================
--- ÍNDICES OTIMIZADOS
+--             OPTIMIZED INDEXES
 -- ============================================
 CREATE INDEX idx_pedido_status_data ON Pedido(Status, Data_Pedido);
 CREATE INDEX idx_produto_categoria ON Produto(ID_Categoria, Preco);
@@ -514,7 +524,7 @@ CREATE INDEX idx_item_pedido_completo ON Item_Pedido(ID_Order, ID_Product);
 CREATE INDEX idx_cliente_tipo ON Cliente(Tipo_Cliente, created_at);
 
 -- ============================================
--- AUDITORIA DE ALTERAÇÕES DE PRODUTO
+--          PRODUCT CHANGE AUDIT
 -- ============================================
 DELIMITER //
 CREATE TRIGGER trg_audita_preco_produto
@@ -530,7 +540,7 @@ END;
 DELIMITER ;
 
 -- ============================================
--- INSERTS DE TESTE
+--               TEST INSERTS
 -- ============================================
 INSERT INTO Fornecedor (Nome, CNPJ, Telefone, Email) VALUES
 ('Fornecedor Alpha', '12345678000195', '11987654321', 'alpha@email.com'),
@@ -548,7 +558,7 @@ INSERT INTO Categoria (Nome, Descricao) VALUES
 ## 📊 Consultas Avançadas
 
 ```sql
--- 1. Histórico de alterações de preço
+-- 1. Price change history
 SELECT 
     P.Nome AS Produto,
     HP.Preco_Antigo,
@@ -558,7 +568,7 @@ FROM Historico_Preco HP
 JOIN Produto P ON HP.ID_Product = P.ID_Product
 ORDER BY HP.Data_Alteracao DESC;
 
--- 2. Produtos por categoria com estoque crítico
+-- 2. Products by category with critical stock levels
 SELECT 
     C.Nome AS Categoria,
     P.Nome AS Produto,
@@ -573,7 +583,7 @@ JOIN Categoria C ON P.ID_Categoria = C.ID_Categoria
 WHERE P.Quantidade_Estoque < 50
 ORDER BY P.Quantidade_Estoque ASC;
 
--- 3. Análise de vendas por período e categoria
+-- 3. Sales analysis by period and category.
 SELECT 
     DATE_FORMAT(Pe.Data_Pedido, '%Y-%m') AS Mes,
     C.Nome AS Categoria,
@@ -588,7 +598,7 @@ WHERE Pe.Data_Pedido >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
 GROUP BY Mes, C.Nome
 ORDER BY Mes DESC, Valor_Total DESC;
 
--- 4. Transportadoras com melhor desempenho
+-- 4. Transport companies with the best performance
 SELECT 
     T.Nome AS Transportadora,
     COUNT(E.ID_Delivery) AS Total_Entregas,
@@ -604,15 +614,15 @@ ORDER BY Taxa_Sucesso DESC;
 
 ---
 
-## 🚀 Tecnologias Utilizadas
+## 🚀 Technologies Used
 
-- **Banco de Dados:** MySQL 8+ ou PostgreSQL 14+
-- **Modelagem:** Mermaid, MySQL Workbench, pgAdmin
-- **Versionamento:** Git
+- **Database:** MySQL 8+ ou PostgreSQL 14+
+- **Modeling:** Mermaid, MySQL Workbench, pgAdmin
+- **Version control:** Git
 
 ---
 
-## 📦 Instalação e Execução
+## 📦 Installation and Execution
 
 ```bash
 git clone https://github.com/seu-usuario/order-management-system.git
@@ -624,7 +634,7 @@ mysql -u root -p < database/queries.sql
 
 ---
 
-## ✅ Testes e Validação
+## ✅ Testing and Validation
 
 - Insira itens em estoque menor que o disponível e verifique o manejo.
 - Valide constraints de CPF/CNPJ, e o correto vínculo de endereços.
